@@ -1,0 +1,61 @@
+WSL2 Networking instructions:
+
+
+CONNECT TO WINDOWS SERVICES FROM WSL2
+#############################################################################
+If you need to connect to a service running inside windows,
+use the IP address of the windows machine from WSL2's perspective
+	
+	HINT! This IP address is its nameserver inside /etc/resolv.conf
+
+You must also create windows firewall rules to allow the inbound/outbound traffic
+	- NOTE: Outbound may or may not be necessary. I'm thinking there's a 
+	        statefull property of windows defender. PostgreSQL worked without
+	        an outbound rule
+
+Finally, ensure that the service you're trying to use allows external connections
+	- for example, in PostgreSQL, I needed to update the pg_hba.conf file to allow
+	  connections from the 172.19.80.1/20 subnet (WSL's)
+
+CONNECT TO WSL2 SERVICES FROM WINDOWS
+#############################################################################
+Use the IP address of the WSL2 box.
+	- can be found with the "ip a" command
+
+
+CISCO ANYCONNECT ISSUES
+##############################################################################
+WSL2 working on Cisco... 
+See https://community.cisco.com/t5/vpn/anyconnect-wsl-2-windows-substem-for-linux/td-p/4179888
+
+Open powershell as Admin
+
+# this must be ran every time
+Get-NetAdapter | Where-Object {$_.InterfaceDescription -Match "Cisco AnyConnect"} | Set-NetIPInterface -InterfaceMetric 4000
+
+# prioritize WSL network traffic
+Get-NetIPInterface -InterfaceAlias "vEthernet (WSL)" | Set-NetIPInterface -InterfaceMetric 1
+
+
+
+# get DNS Nameservers
+Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses
+
+# get search domains
+Get-DnsClientGlobalSetting | Select-Object -ExpandProperty SuffixSearchList
+
+sudo vim /etc/resolv.conf
+
+# company nameservers
+nameserver 10......
+....
+....
+
+# google
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+# search
+search exampledomain.com
+...
+...
